@@ -8,7 +8,6 @@ Use the function spikeMatrix = ReadFilterSpikes(loc, filename, Nsig)
 
 
 INPUTS
-
 loc: file location
 
 filename: name of data file
