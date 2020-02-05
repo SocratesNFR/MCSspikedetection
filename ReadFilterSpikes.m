@@ -42,7 +42,7 @@ for i = 1:60
         index = find(strcmp(e, label));
     end
     data = data_labels(:,index);
-    voltRaw = double(data)*conv*10^(double(exponent))*1e6;      % µV
+    voltRaw = double(data)*conver*10^(double(exponent))*1e6;      % µV
     volt(:,i) = filter(Hd, voltRaw);
     [ev, c, thresh, spikeRate] = EventDetector(rate, Nsig, volt(:,i), isNeg);
     events{i} = ev;
