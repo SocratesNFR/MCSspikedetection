@@ -1,8 +1,29 @@
-%% Reads data from file, applies filter, performs spike detection
+% --- Reads data from file, applies filter, performs spike detection with
+% user-input number of standard deviations (Nsig) below the median. Spike
+% trains are output in numerical order. Compatible with .h5 files generated
+% by MultiChannel Systems software suite from recordings with the
+% 60-electrode MEA2100-System.
 
-function spikeMatrix = ReadFilterSpikes(loc, filename, Nsig)
+% INPUTS
+% loc: file location
+% filename: name of data file
+% Nsig: number of standard deviations for event detection
+% OUTPUTS
+% events: event list in a cell array, where events{i} is an s x 3 matrix
+%   listing the amplitude (uV, column 1), time (s, column 2), and sample
+%   number (column 3) of each of the s detected events
+% thresh: list of thresholds (uV) for event detection on each electrode
+% spikeMatrix: binary matrix, where 0 indicates no spike and 1 indicates
+%   spike; matrix dimension is m x n, where m is the number of samples and 
+%   n is the number of electrodes (60)
+% .mat file containing the spike matrix, the sampling rate, the thresholds
+%   for event detection on each electrode in microvolts, the number of
+%   standard deviations used for event detection, and the filename of the
+%   original data file
 
-%% Set up stuff
+function [events, thresh, spikeMatrix] = ReadFilterSpikes(loc, filename, Nsig)
+
+% Set up
 
 % Array of electrode numbers in order
 elecNum = [12:17 21:28 31:38 41:48 51:58 61:68 71:78 82:87].';
@@ -25,7 +46,8 @@ time = tStart:deltaT:tEnd;
 time = time.';
 
 
-%% Read and spike trains
+% Read file and get spike trains
+
 % Initialize variables
 events = cell(60, 1);
 numEvents = zeros(60, 1);
@@ -43,15 +65,19 @@ for i = 1:60
     end
     data = data_labels(:,index);
     voltRaw = double(data)*conver*10^(double(exponent))*1e6;      % µV
-    volt(:,i) = filter(Hd, voltRaw);
-    [ev, c, thresh, spikeRate] = EventDetector(rate, Nsig, volt(:,i), isNeg);
+    volt = filter(Hd, voltRaw);
+    [ev, c, thresh] = SpikeDetector(rate, Nsig, volt, 1);
     events{i} = ev;
     numEvents(i) = c;
     threshold(i) = thresh;
-    FR(i) = spikeRate;
+    if c > 0
+        spikeMatrix(events{i}(:,3), i) = 1;
+    end
 end
 
-%% Save
+
+% Save
+
 % Save .mat file
 savefile = char(filename(1:(length(filename)-3)));
-save(savefile, 'spikeMatrix', 'events', 'rate', 'threshold', 'Nsig');
+save(savefile, 'spikeMatrix', 'rate', 'threshold', 'Nsig', 'filename');
